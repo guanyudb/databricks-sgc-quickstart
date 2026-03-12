@@ -55,7 +55,7 @@ def train():
 train.distributed()
 ```
 
-**Trade-offs:** Remote execution has limited observability (logs are captured as artifacts rather than streamed) and limited error handling. For large production workloads, consider using [SGCLI](../sgcli_batch/) instead.
+**Trade-offs:** Remote execution has limited observability (logs are captured as artifacts rather than streamed) and limited error handling. For large production workloads, consider using [SGCLI](../sgcli/) instead.
 
 ---
 

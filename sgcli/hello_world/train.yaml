@@ -28,5 +28,5 @@ code_source:
     repo_path: /path/to/your/local/sgc-onboarding   # UPDATE THIS
 
 command: |-
-  cd $HOME/sgc-onboarding/sgcli_batch/hello_world
+  cd $HOME/sgc-onboarding/sgcli/hello_world
   sh commands.sh

@@ -1,6 +1,6 @@
-# SGCLI Batch Workflow
+# SGCLI Workflow
 
-This folder demonstrates the **SGCLI batch workflow** for submitting GPU training jobs to Databricks Serverless GPU Compute. SGCLI is the recommended approach for production training workloads that need log streaming, retry management, and checkpoint recovery.
+This folder demonstrates the **SGCLI workflow** for submitting GPU training jobs to Databricks Serverless GPU Compute. SGCLI is the recommended approach for production training workloads that need log streaming, retry management, and checkpoint recovery.
 
 ## How SGCLI Works
 

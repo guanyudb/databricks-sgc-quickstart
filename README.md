@@ -41,7 +41,7 @@ SGC nodes come with a pre-optimized environment including:
 
 SGC supports two workflows for submitting GPU workloads:
 
-| | SGCLI (Batch) | Notebook Interactive |
+| | SGCLI | Notebook Interactive |
 |---|---|---|
 | **Interface** | CLI tool (`sgcli`) | Databricks notebook |
 | **How it works** | Define a YAML config, submit via `sgcli run` | Decorate a function with `@distributed`, call `.distributed()` |
@@ -63,7 +63,7 @@ SGC supports two workflows for submitting GPU workloads:
 sgc-onboarding/
 ├── README.md                              # This file
 │
-├── sgcli_batch/                           # SGCLI batch workflow examples
+├── sgcli/                           # SGCLI workflow examples
 │   ├── README.md                          # Detailed SGCLI setup and usage guide
 │   ├── hello_world/                       # Minimal SGCLI example
 │   │   ├── train.yaml                     # Workload definition
@@ -106,13 +106,13 @@ results = hello.distributed()
 print(results)
 ```
 
-### Option 2: SGCLI Batch
+### Option 2: SGCLI
 
 1. Install SGCLI: `pip install sgcli_wheel/databricks_serverless_gpu_cli-*.whl`
 2. Authenticate: `databricks auth login --host https://your-workspace.cloud.databricks.com`
-3. Submit: `sgcli run -f sgcli_batch/hello_world/train.yaml --watch`
+3. Submit: `sgcli run -f sgcli/hello_world/train.yaml --watch`
 
-See the [SGCLI Batch README](sgcli_batch/README.md) for full setup instructions.
+See the [SGCLI README](sgcli/README.md) for full setup instructions.
 
 ---
 
@@ -154,7 +154,7 @@ results = train.distributed()  # Launch distributed execution
 
 ### SGCLI Workload YAML
 
-The configuration file for batch workloads submitted via `sgcli`:
+The configuration file for workloads submitted via `sgcli`:
 
 ```yaml
 experiment_name: my-experiment
