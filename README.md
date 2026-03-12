@@ -19,7 +19,7 @@ A hands-on onboarding repository for **Databricks Serverless GPU Compute (SGC)**
 | GPU | VRAM | Max GPUs | Multi-Node | Best For |
 |-----|------|----------|------------|----------|
 | **A10** (NVIDIA A10G) | 24 GB | 32 | Yes (up to 70 nodes) | Small-to-medium ML/DL, fine-tuning smaller models |
-| **H100** (NVIDIA H100) | 80 GB HBM3 | 32 | Yes (8 GPUs per node) | Large-scale training, LLM fine-tuning, foundation models |
+| **H100** (NVIDIA H100) | 80 GB HBM3 | 128 | Yes (up to 16 nodes, 8 GPUs/node) | Large-scale training, LLM fine-tuning, foundation models |
 
 ### Pre-installed Environment (v4+)
 
@@ -118,8 +118,7 @@ See the [SGCLI README](sgcli/README.md) for full setup instructions.
 
 ## Prerequisites
 
-- A Databricks workspace with **Serverless GPU Compute** enabled
-  - Region must be `us-west-2` or `us-east-1`
+- A Databricks workspace with **Serverless GPU Compute** enabled (see [Supported Regions](#supported-regions))
   - Not supported on compliance security profile workspaces (HIPAA, PCI)
   - PrivateLink workspaces are not supported
 - **Unity Catalog** enabled (for Volumes-based data storage)
@@ -207,14 +206,20 @@ mlflow.end_run()
 
 ---
 
+## Supported Regions
+
+| Cloud | Regions |
+|-------|---------|
+| **AWS** | `us-east-1`, `us-east-2`, `us-west-1`, `us-west-2` |
+| **Azure** | `eastus`, `eastus2`, `eastusc2`, `eastusc3`, `centralus`, `northcentralus`, `westcentralus`, `westus`, `westus2`, `westus3` |
+
 ## Limitations
 
-- **Region:** Workspace must be in `us-west-2` or `us-east-1`
-- **H100 multi-node:** Supported (8 GPUs per node, e.g., 16 GPUs = 2 nodes)
+- **H100 multi-node:** Supported up to 16 nodes (128 GPUs), but currently gated — contact your Databricks account team to enable
 - **A10 multi-node:** Supported up to 70 nodes, but provisioning can take up to 20 minutes
 - **Runtime cap:** 7-day maximum execution
 - **Pip environment size:** Max 15 GB
-- **Compliance:** Not supported for HIPAA/PCI workspaces
+- **Compliance:** Not supported for HIPAA/PCI workspaces during Beta
 - **PrivateLink:** Not supported
 
 ---
