@@ -1,0 +1,32 @@
+# SGC Hello World — SGCLI Workload Definition
+#
+# Submit this job with:
+#   sgcli run -f train.yaml --watch
+#
+# Before running, update:
+#   1. experiment_name — use a unique name
+#   2. code_source.snapshot.repo_path — point to your local clone of this repo
+
+experiment_name: sgc-hello-world
+run_name: hello-world-test
+
+environment:
+  env_variables:
+    NCCL_DEBUG: "INFO"
+  dependencies: dependencies.yaml
+
+compute:
+  gpus: 2
+  gpu_type: h100
+
+max_retries: 0
+
+code_source:
+  type: snapshot
+  snapshot:
+    allow_uncommitted: true
+    repo_path: /path/to/your/local/sgc-onboarding   # UPDATE THIS
+
+command: |-
+  cd $HOME/sgc-onboarding/sgcli_batch/hello_world
+  sh commands.sh
