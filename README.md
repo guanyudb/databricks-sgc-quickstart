@@ -19,7 +19,7 @@ A hands-on onboarding repository for **Databricks Serverless GPU Compute (SGC)**
 | GPU | VRAM | Max GPUs | Multi-Node | Best For |
 |-----|------|----------|------------|----------|
 | **A10** (NVIDIA A10G) | 24 GB | 32 | Yes (up to 70 nodes) | Small-to-medium ML/DL, fine-tuning smaller models |
-| **H100** (NVIDIA H100) | 80 GB HBM3 | 32 | Single-node only | Large-scale training, LLM fine-tuning, foundation models |
+| **H100** (NVIDIA H100) | 80 GB HBM3 | 32 | Yes (8 GPUs per node) | Large-scale training, LLM fine-tuning, foundation models |
 
 ### Pre-installed Environment (v4+)
 
@@ -210,7 +210,7 @@ mlflow.end_run()
 ## Limitations
 
 - **Region:** Workspace must be in `us-west-2` or `us-east-1`
-- **H100 multi-node:** Not yet supported (single-node only, up to 32 GPUs)
+- **H100 multi-node:** Supported (8 GPUs per node, e.g., 16 GPUs = 2 nodes)
 - **A10 multi-node:** Supported up to 70 nodes, but provisioning can take up to 20 minutes
 - **Runtime cap:** 7-day maximum execution
 - **Pip environment size:** Max 15 GB
