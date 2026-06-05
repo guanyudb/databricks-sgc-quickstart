@@ -15,18 +15,22 @@ environment:
     NCCL_DEBUG: "INFO"
   dependencies: dependencies.yaml
 
+# A10 = 1 GPU/node, so gpus:2 means 2 A10 nodes — minimum for a multi-node hello world.
+# For H100 (8 GPUs/node) use gpus:8 (single node) or gpus:16 (2 nodes).
 compute:
   gpus: 2
-  gpu_type: h100
+  gpu_type: a10
 
 max_retries: 0
 
+# repo_path is relative to this train.yaml (sgcli resolves YAML-relative paths automatically).
+# ../.. points to the repo root — no manual editing needed if you keep the file structure intact.
 code_source:
   type: snapshot
   snapshot:
     allow_uncommitted: true
-    repo_path: /path/to/your/local/sgc-onboarding   # UPDATE THIS
+    repo_path: ../..
 
 command: |-
-  cd $HOME/sgc-onboarding/sgcli/hello_world
+  cd $HOME/databricks-sgc-quickstart/sgcli/hello_world
   sh commands.sh

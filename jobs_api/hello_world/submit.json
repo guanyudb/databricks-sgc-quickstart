@@ -1,0 +1,19 @@
+{
+  "run_name": "sgc-hello-world-jobs-api",
+  "tasks": [
+    {
+      "task_key": "gpu_hello",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/<YOUR_EMAIL>/sgc_hello_world_jobs_api/gpu_notebook",
+        "source": "WORKSPACE"
+      },
+      "environment_key": "gpu_env",
+      "compute": { "hardware_accelerator": "GPU_1xA10" }
+    }
+  ],
+  "queue": { "enabled": true },
+  "environments": [
+    { "environment_key": "gpu_env", "spec": { "environment_version": "5" } }
+  ],
+  "performance_target": "PERFORMANCE_OPTIMIZED"
+}

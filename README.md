@@ -21,13 +21,14 @@ A hands-on onboarding repository for **Databricks Serverless GPU Compute (SGC)**
 | **A10** (NVIDIA A10G) | 24 GB | 32 | Yes (up to 70 nodes) | Small-to-medium ML/DL, fine-tuning smaller models |
 | **H100** (NVIDIA H100) | 80 GB HBM3 | 128 | Yes (up to 16 nodes, 8 GPUs/node) | Large-scale training, LLM fine-tuning, foundation models |
 
-### Pre-installed Environment (v4+)
+### Pre-installed Environment (v5)
 
-SGC nodes come with a pre-optimized environment including:
-- **Ubuntu 24.04**, **Python 3.12**, **CUDA 12.6**
-- **PyTorch 2.7+**, **torchvision**, **torchaudio**, **flash-attention 2.8+**
-- **MLflow 3.6+**, **Databricks Connect**
-- **AI environment option**: adds transformers, pytorch-lightning, ray, accelerate, langchain, and more
+SGC v5 nodes come with a pre-optimized environment. Two flavors:
+
+- **Standard** (`environment_version: "5"`) — minimal: Ubuntu 24.04, Python 3.12, **no torch preinstalled**. Bring your own stack. Supports CUDA 13.
+- **AI** (`base_environment: "databricks_ai_v5"`) — bundled stack: torch 2.9, vLLM 0.13, MLflow, transformers, accelerate, pytorch-lightning, ray, and more. CUDA 12.9.
+
+Older `v4` images are still around but new workspaces should default to v5. Check the [Serverless environment versions](https://docs.databricks.com/aws/en/release-notes/serverless/environment-version/) release notes for the latest.
 
 ### Supported Frameworks & Use Cases
 
@@ -37,33 +38,39 @@ SGC nodes come with a pre-optimized environment including:
 
 ---
 
-## Two Ways to Use SGC
+## Three Ways to Use SGC
 
-SGC supports two workflows for submitting GPU workloads:
+SGC supports three workflows for submitting GPU workloads:
 
-| | SGCLI | Notebook Interactive |
-|---|---|---|
-| **Interface** | CLI tool (`sgcli`) | Databricks notebook |
-| **How it works** | Define a YAML config, submit via `sgcli run` | Decorate a function with `@distributed`, call `.distributed()` |
-| **Best for** | Production training, large-scale jobs | Interactive development, prototyping, small-to-medium jobs |
-| **Observability** | Full log streaming, retry management, run history | Notebook cell output |
-| **Error handling** | Configurable retries (`max_retries`), autoresume from checkpoints | Limited — function either succeeds or raises an exception |
-| **Code management** | Git snapshots, reproducible configs | Notebook state |
+| | SGCLI | Notebook (`@distributed`) | Jobs API (`runs/submit`) |
+|---|---|---|---|
+| **Interface** | CLI tool (`sgcli`) | Databricks notebook | Databricks Jobs REST API |
+| **How it works** | Define a YAML config, submit via `sgcli run` | Decorate a function with `@distributed`, call `.distributed()` | Upload notebook + POST a `submit.json` payload |
+| **Best for** | Production multi-node training, large-scale jobs | Interactive multi-GPU development, prototyping | Headless inference / batch / fine-tuning on a single GPU node |
+| **Compute target** | Reservation pools or on-demand multi-node | Notebook's attached GPU compute (or `remote=True`) | Single GPU node (`GPU_1xA10` / `GPU_1xH100` / `GPU_8xH100`) |
+| **Observability** | Full log streaming, retry management, run history | Notebook cell output | Standard Jobs run page + `runs/get-output` API |
+| **Error handling** | Configurable retries (`max_retries`), autoresume from checkpoints | Limited — function either succeeds or raises | Optional retries via Jobs config |
+| **Code management** | Git snapshots, reproducible configs | Notebook state | Workspace notebook file |
 
 ### Recommendation
 
-- **Start with notebooks** (`@distributed`) for prototyping and interactive development
-- **Move to SGCLI** for production training workloads that need better observability, retry logic, and checkpoint recovery
+- **Start with notebooks** (`@distributed`) for prototyping and interactive multi-GPU development
+- **Use SGCLI** for production multi-node training that needs retry logic, code snapshots, and run history
+- **Use Jobs API** for single-node inference / batch / fine-tuning, especially when you want to script submissions from CI
 
 ---
 
 ## Repository Structure
 
 ```
-sgc-onboarding/
+databricks-sgc-quickstart/
 ├── README.md                              # This file
 │
-├── sgcli/                           # SGCLI workflow examples
+├── sgcli_wheel/                           # SGCLI Python wheel (not on PyPI)
+│   ├── README.md
+│   └── databricks_serverless_gpu_cli-0.1.0-py3-none-any.whl
+│
+├── sgcli/                                 # SGCLI workflow examples
 │   ├── README.md                          # Detailed SGCLI setup and usage guide
 │   ├── hello_world/                       # Minimal SGCLI example
 │   │   ├── train.yaml                     # Workload definition
@@ -73,12 +80,20 @@ sgc-onboarding/
 │   └── geneformer_pretrain/               # Real-world example: Geneformer pretraining
 │       └── README.md                      # Guide + link to full example repo
 │
-└── notebook_interactive/                  # Interactive notebook workflow examples
-    ├── README.md                          # Detailed notebook workflow guide
-    ├── hello_world/                       # Minimal @distributed example
-    │   └── hello_world_distributed.py     # Databricks notebook
-    └── cifar10_classification/            # Real-world example: CIFAR-10 on H100
-        └── README.md                      # Guide + link to full example repo
+├── notebook_interactive/                  # Interactive notebook workflow examples
+│   ├── README.md                          # Detailed notebook workflow guide
+│   ├── hello_world/                       # Minimal @distributed example
+│   │   └── hello_world_distributed.py     # Databricks notebook
+│   └── cifar10_classification/            # Real-world example: CIFAR-10 on H100
+│       └── README.md                      # Guide + link to full example repo
+│
+└── jobs_api/                              # Jobs API workflow examples
+    ├── README.md                          # Detailed Jobs API setup and usage guide
+    └── hello_world/                       # Minimal runs/submit example
+        ├── README.md
+        ├── gpu_notebook.py                # Notebook to upload + run on GPU
+        ├── submit.json                    # Jobs API runs/submit payload
+        └── submit_and_poll.sh             # Upload + submit + poll + read-output script
 ```
 
 ---
@@ -108,11 +123,24 @@ print(results)
 
 ### Option 2: SGCLI
 
-1. Install SGCLI: `pip install sgcli_wheel/databricks_serverless_gpu_cli-*.whl`
+1. Install SGCLI from the bundled wheel (recommended via `uv`):
+   ```bash
+   uv tool install --python 3.12 sgcli_wheel/databricks_serverless_gpu_cli-0.1.0-py3-none-any.whl
+   ```
 2. Authenticate: `databricks auth login --host https://your-workspace.cloud.databricks.com`
-3. Submit: `sgcli run -f sgcli/hello_world/train.yaml --watch`
+3. Submit: `cd sgcli/hello_world && sgcli run -f train.yaml --watch`
 
-See the [SGCLI README](sgcli/README.md) for full setup instructions.
+See the [SGCLI README](sgcli/README.md) and [`sgcli_wheel/README.md`](sgcli_wheel/README.md) for full setup instructions.
+
+### Option 3: Jobs API (`runs/submit`)
+
+1. Authenticate the Databricks CLI: `databricks auth login --host https://your-workspace.cloud.databricks.com`
+2. Submit + poll a GPU notebook in one command:
+   ```bash
+   cd jobs_api/hello_world && ./submit_and_poll.sh
+   ```
+
+The script uploads `gpu_notebook.py` to your workspace, submits it via `runs/submit` to `GPU_1xA10`, polls until done, and prints the notebook output. See the [Jobs API README](jobs_api/README.md) for compute types and switching to `GPU_1xH100` / `GPU_8xH100`.
 
 ---
 
@@ -176,21 +204,9 @@ command: |-
 
 ### MLflow Integration
 
-SGC integrates with Databricks MLflow for experiment tracking. For distributed workloads, create a single MLflow run in the driver/notebook context and pass the run ID to workers:
+SGC integrates with Databricks MLflow for experiment tracking. For distributed workloads, the recommended pattern is to **create a single MLflow run in the driver/notebook context** and pass the run ID to workers via `MLFLOW_RUN_ID` so all ranks log to the same run.
 
-```python
-import mlflow, os
-
-mlflow.set_experiment("/Workspace/Users/you@example.com/my_experiment")
-run = mlflow.start_run(run_name="my-run")
-os.environ["MLFLOW_RUN_ID"] = run.info.run_id
-os.environ["MLFLOW_EXPERIMENT_NAME"] = "/Workspace/Users/you@example.com/my_experiment"
-mlflow.end_run()
-
-# Inside @distributed or SGCLI command, all nodes log to the same run:
-# with mlflow.start_run(run_id=os.environ.get("MLFLOW_RUN_ID")):
-#     mlflow.log_metric("loss", loss_val)
-```
+See [`notebook_interactive/README.md` → MLflow Integration](notebook_interactive/README.md#mlflow-integration) for the full pattern (with a runnable example in [`notebook_interactive/hello_world/hello_world_distributed.py`](notebook_interactive/hello_world/hello_world_distributed.py)).
 
 ### Data Loading
 
