@@ -27,6 +27,8 @@ The complete notebooks are available in the life sciences examples repository:
 
 **[databricks-industry-solutions/sgc-examples-lifesciences/sgc_cifar10_image_classification](https://github.com/databricks-industry-solutions/sgc-examples-lifesciences/tree/main/sgc_cifar10_image_classification)**
 
+> **Access:** This repository is **Databricks-internal** (the `databricks-industry-solutions` org). You'll need to be a member of that org or be authenticated as a Databricks employee to view it. External viewers will see a 404. If you can't access it, ask your Databricks account team.
+
 ## Quick Start
 
 1. Import the 3 notebooks into your Databricks workspace

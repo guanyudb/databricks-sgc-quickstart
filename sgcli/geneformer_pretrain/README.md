@@ -20,6 +20,8 @@ The complete code, data preparation notebooks, and detailed instructions are ava
 
 **[databricks-industry-solutions/sgc-examples-lifesciences/sgc_geneformer_pretrain](https://github.com/databricks-industry-solutions/sgc-examples-lifesciences/tree/main/sgc_geneformer_pretrain)**
 
+> **Access:** This repository is **Databricks-internal** (the `databricks-industry-solutions` org). You'll need to be a member of that org or be authenticated as a Databricks employee to view it. External viewers will see a 404. If you can't access it, ask your Databricks account team.
+
 ## Quick Overview of the Workflow
 
 ### 1. Prepare Data (One-Time)
