@@ -123,12 +123,26 @@ print(results)
 
 ### Option 2: SGCLI
 
-1. Install SGCLI from the bundled wheel (recommended via `uv`):
+1. Install SGCLI from the bundled wheel (recommended: local `env/` in this repo):
    ```bash
-   uv tool install --python 3.12 sgcli_wheel/databricks_serverless_gpu_cli-0.1.0-py3-none-any.whl
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
+   
+   ```bash
+   uv venv env --python 3.12
+   uv pip install --python env/bin/python sgcli_wheel/databricks_serverless_gpu_cli-0.1.0-py3-none-any.whl
+   ```
+   - This installs SGCLI into `./env` in the current repo (keeps setup project-local and easy to clean up).
+   - Run SGCLI directly:
+     ```bash
+     env/bin/sgcli --help
+     ```
+   - Or activate first:
+     ```bash
+     source env/bin/activate
+     ```
 2. Authenticate: `databricks auth login --host https://your-workspace.cloud.databricks.com`
-3. Submit: `cd sgcli/hello_world && sgcli run -f train.yaml --watch`
+3. Submit: `cd sgcli/hello_world && ../../env/bin/sgcli run -f train.yaml --watch`
 
 See the [SGCLI README](sgcli/README.md) and [`sgcli_wheel/README.md`](sgcli_wheel/README.md) for full setup instructions.
 
