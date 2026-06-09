@@ -68,7 +68,7 @@ from serverless_gpu import distributed
 
 # COMMAND ----------
 
-@distributed(gpus=2, gpu_type='a10')
+@distributed(gpus=8, gpu_type='h100', remote=False)
 def hello_world():
     """Minimal distributed function — runs on each GPU."""
     import os
@@ -166,3 +166,126 @@ for r in results:
     print(f"  Rank {r['rank']}: {r['gpu']} — {r['matmul_ms']:.2f} ms ({r['tflops']:.2f} TFLOPS)")
 print("=" * 60)
 print("Hello World complete!")
+
+# COMMAND ----------
+
+# DBTITLE 1,Section: Remote Distributed
+# MAGIC %md
+# MAGIC ## Remote Distributed Testing
+# MAGIC
+# MAGIC Same workload as above, but with `remote=True` — the function executes on a **remote GPU cluster** provisioned by the `@distributed` decorator, rather than on the local notebook compute.
+# MAGIC
+# MAGIC ### What Changes
+# MAGIC - `remote=True` provisions a separate cluster for execution
+# MAGIC - The driver notebook stays responsive while the remote job runs
+# MAGIC - All other logic (all-reduce, matmul benchmark, MLflow logging) is identical
+
+# COMMAND ----------
+
+# DBTITLE 1,Define Remote Distributed Function
+# MAGIC %md
+# MAGIC ## Define Remote Distributed Function
+
+# COMMAND ----------
+
+# DBTITLE 1,Remote distributed function definition
+@distributed(gpus=8, gpu_type='h100', remote=True)
+def hello_world_remote():
+    """Same as hello_world() but executes on a remote GPU cluster."""
+    import os
+    import torch
+    import torch.distributed as dist
+    import mlflow
+
+    # Initialize distributed process group
+    dist.init_process_group(backend="nccl")
+
+    rank = dist.get_rank()
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
+    world_size = dist.get_world_size()
+
+    torch.cuda.set_device(local_rank)
+    device = torch.device(f"cuda:{local_rank}")
+    gpu_name = torch.cuda.get_device_name(device)
+
+    print(f"[Rank {rank}/{world_size}] Hello! Device: {gpu_name}, "
+          f"CUDA {torch.version.cuda}, PyTorch {torch.__version__}")
+
+    # ---- Test 1: All-reduce ----
+    tensor = torch.tensor([rank + 1.0], device=device)
+    dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
+    expected = sum(range(1, world_size + 1))
+    assert tensor.item() == expected, f"All-reduce failed: {tensor.item()} != {expected}"
+    print(f"[Rank {rank}] All-reduce OK: {tensor.item()}")
+
+    # ---- Test 2: GPU matmul benchmark ----
+    a = torch.randn(2000, 2000, device=device)
+    b = torch.randn(2000, 2000, device=device)
+
+    # Warmup
+    for _ in range(3):
+        torch.matmul(a, b)
+    torch.cuda.synchronize()
+
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+    start.record()
+    c = torch.matmul(a, b)
+    end.record()
+    torch.cuda.synchronize()
+
+    elapsed_ms = start.elapsed_time(end)
+    tflops = (2 * 2000**3) / (elapsed_ms / 1000) / 1e12
+    print(f"[Rank {rank}] 2000x2000 matmul: {elapsed_ms:.2f} ms ({tflops:.2f} TFLOPS)")
+
+    # ---- Log to MLflow (rank 0 only) ----
+    if rank == 0:
+        run_id = os.environ.get("MLFLOW_RUN_ID")
+        experiment_name = os.environ.get("MLFLOW_EXPERIMENT_NAME")
+        if experiment_name:
+            mlflow.set_experiment(experiment_name)
+        with mlflow.start_run(run_id=run_id):
+            mlflow.log_params({
+                "world_size": world_size,
+                "gpu_type": gpu_name,
+                "pytorch_version": torch.__version__,
+                "cuda_version": torch.version.cuda,
+            })
+            mlflow.log_metrics({
+                "remote_all_reduce_result": tensor.item(),
+                "remote_matmul_time_ms": elapsed_ms,
+                "remote_tflops": tflops,
+            })
+            print(f"[Rank {rank}] Results logged to MLflow")
+
+    dist.destroy_process_group()
+
+    return {
+        "rank": rank,
+        "gpu": gpu_name,
+        "all_reduce": tensor.item(),
+        "matmul_ms": elapsed_ms,
+        "tflops": tflops,
+    }
+
+# COMMAND ----------
+
+# DBTITLE 1,Run Remote
+# MAGIC %md
+# MAGIC ## Run It! (Remote)
+# MAGIC
+# MAGIC Call `.distributed()` to launch the function on a **remote cluster**.
+# MAGIC Results are returned as a list (one entry per rank), same as the local variant.
+
+# COMMAND ----------
+
+# DBTITLE 1,Execute remote distributed function
+results_remote = hello_world_remote.distributed()
+
+print("\n" + "=" * 60)
+print("RESULTS FROM ALL RANKS (REMOTE)")
+print("=" * 60)
+for r in results_remote:
+    print(f"  Rank {r['rank']}: {r['gpu']} — {r['matmul_ms']:.2f} ms ({r['tflops']:.2f} TFLOPS)")
+print("=" * 60)
+print("Hello World (remote) complete!")
